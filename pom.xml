@@ -4,6 +4,11 @@
   <artifactId>CS980-DataScience</artifactId>
   <version>1.0</version>
   
+  <properties>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+  </properties>
+  
   <repositories>
         <repository>
             <id>jitpack.io</id>
@@ -12,7 +17,7 @@
     </repositories>
     
     <dependencies>
-  	<dependency>
+      <dependency>
             <groupId>com.github.TREMA-UNH</groupId>
             <artifactId>trec-car-tools-java</artifactId>
             <version>9</version>
@@ -47,8 +52,48 @@
     <sourceDirectory>src</sourceDirectory>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.6.1</version>
+        <artifactId>maven-assembly-plugin</artifactId>
+        
+        <executions>
+                    <execution>
+                        <id>build-Search</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>edu.unh.cs.Search</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>Searcher</finalName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-Index</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>edu.unh.cs.CreateIndex</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>Builder</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+        
+        
         <configuration>
           <source>1.8</source>
           <target>1.8</target>

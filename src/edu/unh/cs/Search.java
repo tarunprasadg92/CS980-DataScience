@@ -81,13 +81,15 @@ import java.io.FileWriter;
  		
  		final String pagesFile = args[0];
  		final FileInputStream fis = new FileInputStream(new File(pagesFile));
+ 		ArrayList<String> runStringPage = new ArrayList<String>();
+ 		
  		for (Data.Page page : DeserializeData.iterableAnnotations(fis)) {
  			final String queryId = page.getPageId(); 			
  			String queryString = buildQueryString(page, Collections.<Data.Section>emptyList());
  			
  			TopDocs tops = searcher.search(queryBuilder.toQuery(queryString), 100);
  			ScoreDoc[] scoreDoc = tops.scoreDocs;
- 			ArrayList<String> runStringPage = new ArrayList<String>();
+ 			
  			
  			for (int i = 0; i < scoreDoc.length; i++) {
  				ScoreDoc score = scoreDoc[i];
@@ -99,18 +101,21 @@ import java.io.FileWriter;
  				String runString = queryId+" Q0 "+paragraphID+" "+searchRank+" "+searchScore+" Lucene-BM25";
  				runStringPage.add(runString);
  			}
- 			
- 			FileWriter fw = new FileWriter("pages.run", true);
- 			for(String runString:runStringPage)
- 				fw.write(runString);
- 			
- 			fw.close();
+ 			System.out.print("-");
  		}
- 		System.out.println("pages done...");
+ 		FileWriter fw = new FileWriter("pages.run", true);
+		for(String runString:runStringPage)
+			fw.write(runString+"\n");
+		
+		fw.close();
+ 		
+		System.out.println("pages done...");
  		
  		// Query Sections
  		final String pageFile = args[0];
  		final FileInputStream fis2 = new FileInputStream(new File(pageFile));
+ 		ArrayList<String> runStringSection = new ArrayList<String>();
+ 		
  		for (Data.Page page : DeserializeData.iterableAnnotations(fis2)) {
  			for (List<Data.Section> sectionPath : page.flatSectionPaths()) {
  				final String queryId = Data.sectionPathId(page.getPageId(), sectionPath);
@@ -118,8 +123,7 @@ import java.io.FileWriter;
  				
  				TopDocs tops = searcher.search(queryBuilder.toQuery(queryString), 100);
  				ScoreDoc[] scoreDoc = tops.scoreDocs;
- 				ArrayList<String> runStringSection = new ArrayList<String>();
- 				
+ 		 				
  				for (int i = 0; i < scoreDoc.length; i++) {
  					ScoreDoc score = scoreDoc[i];
  					final Document doc = searcher.doc(score.doc);
@@ -129,15 +133,15 @@ import java.io.FileWriter;
  					
  					String runString = queryId+" Q0 "+paragraphID+" "+searchRank+" "+searchScore+" Lucene-BM25";
  	 				runStringSection.add(runString);
- 				}
- 				
- 				FileWriter fw = new FileWriter("sections.run", true);
- 	 			for(String runString:runStringSection)
- 	 				fw.write(runString);
- 	 			
- 	 			fw.close();			
+ 				}			
  			}
- 		} 		
+ 			System.out.print("-");
+ 		}
+ 		FileWriter fw2 = new FileWriter("sections.run", true);
+		for(String runString:runStringSection)
+			fw2.write(runString+"\n");
+		
+		fw2.close();
  		System.out.println("sections done...");
  	}
  	

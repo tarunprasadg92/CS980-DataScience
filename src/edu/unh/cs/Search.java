@@ -73,7 +73,7 @@ import java.io.FileWriter;
  			System.exit(-1);
  		}
  			
-		// Query pages
+		// Query pages 
  		String indexPath = args[1];
  		IndexSearcher searcher = setUpIndexSearcher(indexPath, "paragraph.lucene");
  		searcher.setSimilarity(new BM25Similarity());

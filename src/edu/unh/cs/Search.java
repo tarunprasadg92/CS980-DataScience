@@ -82,6 +82,7 @@ import java.io.FileWriter;
  		final String pagesFile = args[0];
  		final FileInputStream fis = new FileInputStream(new File(pagesFile));
  		ArrayList<String> runStringPage = new ArrayList<String>();
+ 		ArrayList<String> duplicateCheck = new ArrayList<String>();
  		
  		for (Data.Page page : DeserializeData.iterableAnnotations(fis)) {
  			final String queryId = page.getPageId(); 			
@@ -89,8 +90,7 @@ import java.io.FileWriter;
  			
  			TopDocs tops = searcher.search(queryBuilder.toQuery(queryString), 100);
  			ScoreDoc[] scoreDoc = tops.scoreDocs;
- 			
- 			
+ 			 			
  			for (int i = 0; i < scoreDoc.length; i++) {
  				ScoreDoc score = scoreDoc[i];
  				final Document doc = searcher.doc(score.doc);
@@ -99,8 +99,12 @@ import java.io.FileWriter;
  				final int searchRank = i+1;
  				
  				String runString = queryId+" Q0 "+paragraphID+" "+searchRank+" "+searchScore+" Lucene-BM25";
- 				runStringPage.add(runString);
+ 				if (!duplicateCheck.contains(paragraphID)) {
+ 					duplicateCheck.add(paragraphID);
+ 	 				runStringPage.add(runString);
+ 				} 				
  			}
+ 			duplicateCheck.clear();
  			System.out.print("-");
  		}
  		FileWriter fw = new FileWriter("pages.run", true);
@@ -115,6 +119,7 @@ import java.io.FileWriter;
  		final String pageFile = args[0];
  		final FileInputStream fis2 = new FileInputStream(new File(pageFile));
  		ArrayList<String> runStringSection = new ArrayList<String>();
+ 		duplicateCheck.clear();
  		
  		for (Data.Page page : DeserializeData.iterableAnnotations(fis2)) {
  			for (List<Data.Section> sectionPath : page.flatSectionPaths()) {
@@ -132,7 +137,10 @@ import java.io.FileWriter;
  					final int searchRank = i+1;
  					
  					String runString = queryId+" Q0 "+paragraphID+" "+searchRank+" "+searchScore+" Lucene-BM25";
- 	 				runStringSection.add(runString);
+ 					if (!duplicateCheck.contains(paragraphID)) {
+ 						duplicateCheck.add(paragraphID);
+ 						runStringSection.add(runString); 						
+ 					} 	 				
  				}			
  			}
  			System.out.print("-");

@@ -115,7 +115,7 @@ import java.io.FileWriter;
  		
 		System.out.println("pages done...");
  		
- 		// Query Sections 
+ 		// Query Sections
  		final String pageFile = args[0];
  		final FileInputStream fis2 = new FileInputStream(new File(pageFile));
  		ArrayList<String> runStringSection = new ArrayList<String>();

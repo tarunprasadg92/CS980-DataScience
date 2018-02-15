@@ -35,3 +35,10 @@ second argument is the location of the Lucene Index.
 ```
 java -jar Searcher-jar-with-dependencies.jar <OutlinesCBOR> <LuceneIndex>
 ```
+
+### PageRank Algorithm
+
+Follow the same steps mentioned above in Installation and Execution. The following command runs the PageRank algorithm where the argument is the graph text file that contains the nodes and links in the graphs.
+```
+java -jar PageRank-jar-with-dependencies.jar <Graph_Input_File>
+```

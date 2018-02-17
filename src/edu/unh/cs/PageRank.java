@@ -21,6 +21,8 @@ public class PageRank {
 	public static double teleportation_probability = 0.15;
 	public static double page_rank_vector[];
 	
+	public static boolean convergence_reached = false;
+	
 	public static void findTopPages() {
 		double top_10[] = new double[10];
 		int top_pages[] = new int[10];
@@ -53,14 +55,18 @@ public class PageRank {
 		for (int i = 0; i < 1; i++) {
 			
 			for (int j = 0; j < data.size(); j++) {
-				
+		
 				for (int k = 0; k < data.size(); k++) {
 					temp_vector[j] += page_rank_vector[k] * transition_probability_matrix[k][j];
 				}				
 			}
 		}
 		
+		convergence_reached = true;
+		
 		for (int m = 0; m < data.size(); m++) {
+			if (Math.abs(page_rank_vector[m] - temp_vector[m]) > 0.0000001)
+				convergence_reached = false;
 			page_rank_vector[m] = temp_vector[m];
 		}
 	}
@@ -74,17 +80,30 @@ public class PageRank {
 		}
 	}
 	
-	public static void initializePersonalizedPageRankVector(String node) {
+	public static void initializePersonalizedPageRankVector(String[] node) {
 		page_rank_vector = new double[data.size()];
-		int val = getIndex(node);
+		List<Integer> seed = new ArrayList<Integer>();
 		
+		for (int m = 0; m < node.length; m++) {
+			int val = getIndex(node[m]);
+			seed.add(val);
+		}
+			
 		for (int i = 0; i < data.size(); i++)  {
-			if (i == val) {
-				page_rank_vector[i] = 1;
+			if (seed.contains(i)) {
+				page_rank_vector[i] = 1.0 / node.length;
 			}
 			else {
 				page_rank_vector[i] = 0;
 			}
+		}
+				
+	}
+	
+	public static void printPageRankVector() {
+		
+		for (int i = 0; i < data.size(); i++) {
+			System.out.print(page_rank_vector[i] + " ");
 		}
 	}
 	
@@ -94,14 +113,22 @@ public class PageRank {
 		for (int i = 0; i < N; i++) {
 			int no_out_links = data.get(i).split("\t").length - 1;
 			
-			for (int j = 0; j < N; j++) {
-				if (link_matrix[i][j] == 1) {					
-					transition_probability_matrix[i][j] = (teleportation_probability / N) + ((1.0 - teleportation_probability) * (1.0 / no_out_links)); 
-				}
-				else {
-					transition_probability_matrix[i][j] = (teleportation_probability / N);
+			if (no_out_links == 0) {
+				for (int j = 0; j < N; j++) {
+					transition_probability_matrix[i][j] = (1.0 / N);
 				}
 			}
+			else {
+				for (int j = 0; j < N; j++) {
+					if (link_matrix[i][j] == 1) {					
+						transition_probability_matrix[i][j] = (teleportation_probability / N) + ((1.0 - teleportation_probability) * (1.0 / no_out_links));
+					}
+					else {
+						transition_probability_matrix[i][j] = (teleportation_probability / N);
+					}
+				}
+			}
+			
 		}
 	}
 	
@@ -224,39 +251,37 @@ public class PageRank {
 		
 		computeTransitionProbabilityMatrix();
 		
-		System.out.println("PageRank : ");
-		
 		initializePageRankVector();
 		
-		performIteration();
+		int iteration_count = 0;
+		while(!convergence_reached) {
+			System.out.println("Iteration : " + iteration_count);
+			performIteration();
+			iteration_count++;
+		}
 		
+		System.out.println("Convergence reached...");
+		System.out.println("PageRank : ");
 		findTopPages();
 		
 		System.out.println("----------------------------------");
-		System.out.println("Personalized PageRank with seed 8551571 : ");
+		System.out.println("Personalized PageRank with seed 8551571, 9372953 and 9557678 : ");
+		String[] seeds = {"8551571", "9372953", "9557678"};
+				
+		initializePersonalizedPageRankVector(seeds);
 		
-		initializePersonalizedPageRankVector("8551571");
+		printPageRankVector();
 		
-		performIteration();
+		iteration_count = 0;
+		convergence_reached = false;
+		while(!convergence_reached) {
+			System.out.println("Iteration : " + iteration_count);
+			performIteration();
+			iteration_count++;
+		}
 		
+		System.out.println("Convergence reached...");
+		System.out.println("PageRank : ");
 		findTopPages();
-		
-		System.out.println("----------------------------------");
-		System.out.println("Personalized PageRank with seed 9372953 : ");
-		
-		initializePersonalizedPageRankVector("9372953");
-		
-		performIteration();
-		
-		findTopPages();
-		
-		System.out.println("----------------------------------");
-		System.out.println("Personalized PageRank with seed 9557678 : ");
-		
-		initializePersonalizedPageRankVector("9557678");
-		
-		performIteration();
-		
-		findTopPages();		
 	}
 }

@@ -14,14 +14,17 @@ public class PageRank {
 	
 	public static int link_matrix[][];
 	public static double transition_probability_matrix[][];
+	public static int number_of_seeds = 0;
 	
 	public static List<String> data;
 	public static List<String> nodes;
+	public static List<Integer> seeds;
 	
 	public static double teleportation_probability = 0.15;
 	public static double page_rank_vector[];
 	
 	public static boolean convergence_reached = false;
+	public static boolean personalized_page_rank = false;
 	
 	public static void findTopPages() {
 		double top_10[] = new double[10];
@@ -52,10 +55,8 @@ public class PageRank {
 	public static void performIteration() {
 		double temp_vector[] = new double[data.size()];
 		
-		for (int i = 0; i < 1; i++) {
-			
-			for (int j = 0; j < data.size(); j++) {
-		
+		for (int i = 0; i < 1; i++) {			
+			for (int j = 0; j < data.size(); j++) {		
 				for (int k = 0; k < data.size(); k++) {
 					temp_vector[j] += page_rank_vector[k] * transition_probability_matrix[k][j];
 				}				
@@ -67,13 +68,23 @@ public class PageRank {
 		for (int m = 0; m < data.size(); m++) {
 			if (Math.abs(page_rank_vector[m] - temp_vector[m]) > 0.0000001)
 				convergence_reached = false;
-			page_rank_vector[m] = temp_vector[m];
+			if (personalized_page_rank) {
+				if (seeds.contains(m)) {
+					page_rank_vector[m] = (teleportation_probability / seeds.size()) + (temp_vector[m] * (1.0 - teleportation_probability));
+				}
+				else {
+					page_rank_vector[m] = temp_vector[m] * (1.0 - teleportation_probability);
+				}					
+			}
+			else {
+				page_rank_vector[m] = temp_vector[m];
+			}
 		}
 	}
 	
 	public static void initializePageRankVector() {
 		page_rank_vector = new double[data.size()];
-		double val = 1.0 / data.size();
+		double val = 1.0 / data.size();	
 		
 		for (int i = 0; i < data.size(); i++)  {
 			page_rank_vector[i] = val;
@@ -81,16 +92,15 @@ public class PageRank {
 	}
 	
 	public static void initializePersonalizedPageRankVector(String[] node) {
-		page_rank_vector = new double[data.size()];
-		List<Integer> seed = new ArrayList<Integer>();
+		seeds = new ArrayList<Integer>();
 		
 		for (int m = 0; m < node.length; m++) {
 			int val = getIndex(node[m]);
-			seed.add(val);
+			seeds.add(val);
 		}
 			
 		for (int i = 0; i < data.size(); i++)  {
-			if (seed.contains(i)) {
+			if (seeds.contains(i)) {
 				page_rank_vector[i] = 1.0 / node.length;
 			}
 			else {
@@ -100,8 +110,7 @@ public class PageRank {
 				
 	}
 	
-	public static void printPageRankVector() {
-		
+	public static void printPageRankVector() {		
 		for (int i = 0; i < data.size(); i++) {
 			System.out.print(page_rank_vector[i] + " ");
 		}
@@ -254,6 +263,8 @@ public class PageRank {
 		initializePageRankVector();
 		
 		int iteration_count = 0;
+		System.out.println("PageRank : ");
+		
 		while(!convergence_reached) {
 			System.out.println("Iteration : " + iteration_count);
 			performIteration();
@@ -261,27 +272,26 @@ public class PageRank {
 		}
 		
 		System.out.println("Convergence reached...");
-		System.out.println("PageRank : ");
+		System.out.println("\nTop Pages : ");
 		findTopPages();
 		
-		System.out.println("----------------------------------");
+		System.out.println("\n----------------------------------\n");
 		System.out.println("Personalized PageRank with seed 8551571, 9372953 and 9557678 : ");
 		String[] seeds = {"8551571", "9372953", "9557678"};
-				
-		initializePersonalizedPageRankVector(seeds);
 		
-		printPageRankVector();
+		initializePersonalizedPageRankVector(seeds);
+		personalized_page_rank = true;
 		
 		iteration_count = 0;
 		convergence_reached = false;
-		while(!convergence_reached) {
+		while(iteration_count < 10) {
 			System.out.println("Iteration : " + iteration_count);
 			performIteration();
 			iteration_count++;
 		}
 		
 		System.out.println("Convergence reached...");
-		System.out.println("PageRank : ");
+		System.out.println("\nTop Pages : ");
 		findTopPages();
 	}
 }

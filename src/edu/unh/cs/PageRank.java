@@ -66,17 +66,24 @@ public class PageRank {
 		convergence_reached = true;
 		
 		for (int m = 0; m < data.size(); m++) {
-			if (Math.abs(page_rank_vector[m] - temp_vector[m]) > 0.0000001)
-				convergence_reached = false;
 			if (personalized_page_rank) {
+				double seed_node_value = (teleportation_probability / seeds.size()) + (temp_vector[m] * (1.0 - teleportation_probability));
+				double non_seed_node_value = temp_vector[m] * (1.0 - teleportation_probability);
+				
+				if ((Math.abs(page_rank_vector[m] - seed_node_value) > 0.05) || ((Math.abs(page_rank_vector[m] - non_seed_node_value) > 0.05))) {
+					convergence_reached = false;
+				}
+				
 				if (seeds.contains(m)) {
-					page_rank_vector[m] = (teleportation_probability / seeds.size()) + (temp_vector[m] * (1.0 - teleportation_probability));
+					page_rank_vector[m] = seed_node_value;
 				}
 				else {
-					page_rank_vector[m] = temp_vector[m] * (1.0 - teleportation_probability);
+					page_rank_vector[m] = non_seed_node_value;
 				}					
 			}
 			else {
+				if ((Math.abs(page_rank_vector[m] - temp_vector[m]) > 0.0000001))
+					convergence_reached = false;
 				page_rank_vector[m] = temp_vector[m];
 			}
 		}
@@ -284,7 +291,7 @@ public class PageRank {
 		
 		iteration_count = 0;
 		convergence_reached = false;
-		while(iteration_count < 10) {
+		while(!convergence_reached) {
 			System.out.println("Iteration : " + iteration_count);
 			performIteration();
 			iteration_count++;

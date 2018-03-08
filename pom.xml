@@ -109,6 +109,24 @@
                             <finalName>PageRank</finalName>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>Entity-Linking</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>edu.unh.cs.EntityLinking</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>EntityLinking</finalName>
+                        </configuration>
+                    </execution>
                 </executions>
         
         

@@ -124,7 +124,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>edu.unh.cs.EntityLinking</mainClass>
+                                    <mainClass>edu.unh.cs.EntityLinking.Entity</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

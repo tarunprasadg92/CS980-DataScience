@@ -42,3 +42,10 @@ Follow the same steps mentioned above in Installation and Execution. The followi
 ```
 java -jar PageRank-jar-with-dependencies.jar <Graph_Input_File>
 ```
+
+### Entity Linking using DBPedia SpotLight
+
+Follow  the same steps mentioned above in Installation and Execution. The following command runs Entity Linking, where the arguments are the CBOR input file and path to the CURL shell script (included in the repository).
+```
+java -jar EntityLinking-jar-with-dependencies.jar <path/to/CBOR/file> <path/to/curl/script>
+```

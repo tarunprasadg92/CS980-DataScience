@@ -16,19 +16,31 @@ import java.util.ArrayList;
 
 /*
  * @author Tarun Prasad
+ * 
+ * The program takes in a list paragraph IDs and produces a list of entities
+ * contained in the paragraph using DBPedia SpotLight. The results are then
+ * compared with the ground truth and F-1 score is computed 
  */
 
 public class Entity {
 	
+	/*
+	 * Helper function to print out the map structure built
+	 */
 	public static void printMap(Map<String, List<String>> map) {
 		for (Map.Entry<String, List<String>> l : map.entrySet()) {
 			System.out.println(l.getKey() + " : " + l.getValue());	
 		}
 	}
 	
+	/*
+	 * Function to compute F-1 score 
+	 */
 	public static void computeF1Score(Map<String, List<String>> ground_truth, Map<String, List<String>> dbpedia_result) {
 		
-		List<Double> F1 = new ArrayList<Double>();
+		int total_retrieved_docs = 0;
+		int total_relevant_docs = 0;
+		int total_retrieved_relevant_docs = 0;
 		
 		for (Map.Entry<String, List<String>> l : ground_truth.entrySet()) {
 			List<String> rel_docs = new ArrayList<String>();
@@ -39,55 +51,34 @@ public class Entity {
 			String key = l.getKey();
 			ret_docs = dbpedia_result.get(key);
 			
-			int no_rel_docs = rel_docs.size();
-			int no_ret_docs = ret_docs.size();
-			int no_rel_ret = 0;
+			total_relevant_docs += rel_docs.size();
+			total_retrieved_docs += ret_docs.size();
 			
-			// System.out.println("Relevant Docs : " + rel_docs + "\nRetrieved Docs : " + ret_docs);
 			for (int i = 0; i < ret_docs.size(); i++) {
 				String e = ret_docs.get(i);
 				if (rel_docs.contains(e)) {
-					no_rel_ret++;
+					total_retrieved_relevant_docs++;
 				}
 			}
-			// System.out.println(no_rel_ret);
-			double f1 = 0.0;
-			
-			if ((no_rel_docs == 0) && (no_ret_docs == 0)) { 
-				f1 = 1.0;
-			}
-			else if ((no_rel_docs == 0) && (no_ret_docs != 0)) {
-				f1 = 0.0;
-			}
-			else if ((no_rel_docs != 0) && (no_ret_docs == 0)) {
-				f1 = 0.0;
-			}
-			else {
-				double recall = (double)no_rel_ret / (double)no_rel_docs;
-				double precision = (double)no_rel_ret / (double)no_ret_docs;
-				if ((recall == 0.0) || (precision == 0.0)) {
-					f1 = 0.0;
-				}
-				else {
-					f1 = (2.0 * precision * recall) / (precision + recall);
-				}
-			}
-			
-			F1.add(f1);
 		}
 		
-		double sum = 0.0;
-		for (int s = 0; s < F1.size(); s++) {
-			sum += F1.get(s);			
-		}
-		System.out.println("F1 Score : " + (sum / F1.size()));
+		// Compute F-1 score
+		double retrieved_docs = (double)total_retrieved_docs / ground_truth.size();
+		double relevant_docs = (double)total_relevant_docs / ground_truth.size();
+		double relevant_docs_retrieved = total_retrieved_relevant_docs / ground_truth.size();
+		
+		double precision = relevant_docs_retrieved / retrieved_docs;
+		double recall = relevant_docs_retrieved / relevant_docs;
+		
+		double f1 = (2 * precision* recall) / (precision + recall);
+		System.out.println("\nF-1 Score : " + f1);
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException, ParseException {
 		System.setProperty("file.encoding", "UTF-8");
 		
-		if (args.length < 1) {
-			System.out.println("Usage : <CBOR File>");
+		if (args.length < 2) {
+			System.out.println("Usage : <CBOR File> <Location of CURL script>");
 			System.exit(-1);
 		}
 		
@@ -97,7 +88,7 @@ public class Entity {
 		final String paragraphsFile = args[0];
 		final FileInputStream fis = new FileInputStream(new File(paragraphsFile));
 		
-		String command = "/home/tarun/curl_command.sh";
+		String command = args[1] + "curl_command.sh";
 		int counter = 0;
 		
 		for (Data.Paragraph p : DeserializeData.iterableParagraphs(fis)) {

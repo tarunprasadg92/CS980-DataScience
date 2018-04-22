@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.ObjectInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -28,6 +30,8 @@ import java.io.StringReader;
 import org.json.simple.parser.*;
 import java.util.LinkedHashMap;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.ObjectOutputStream;
 
 /*
@@ -93,13 +97,30 @@ public class PageRankClusters {
 		}
 	}
 	
+	/*
+	 * Function to retrieve score from the PageRank
+	 */
+	public static double getScore(String paraID) {
+		for (String pageID : ranked_data.keySet()) {
+			ArrayList<HashMap<String, Double>> clusters_in_page = ranked_data.get(pageID);
+			for (HashMap<String, Double> cluster : clusters_in_page) {
+				for (String paragraphID : cluster.keySet()) {
+					if (paragraphID.equals(paraID)) {
+						return cluster.get(paragraphID);
+					}
+				}
+			}
+		}
+		return 0.0;
+	}
+	
 	public static void main(String[] args) throws IOException, ParseException {
 		
 		System.setProperty("file.encoding","UTF-8");
 		
 		// Check command line argument
-		if (args.length < 3) {
-			System.out.println("Command line arguments : <cluster-file> <LuceneIndex> <PathToCurlScript>");
+		if (args.length < 4) {
+			System.out.println("Command line arguments : <cluster-file> <LuceneIndex> <PathToCurlScript> <run-file>");
 			System.exit(-1);
 		}
 		
@@ -118,27 +139,27 @@ public class PageRankClusters {
 			e.printStackTrace();
 		}
 		
-		ois.close();
+		ois.close();		
 		
 		// checkReadData();
 
 		int count = 0;
 		ranked_data = new HashMap<String, ArrayList<HashMap<String, Double>>>();
-		ranked_data_common_words = new HashMap<String, ArrayList<HashMap<String, Double>>>();
+		// ranked_data_common_words = new HashMap<String, ArrayList<HashMap<String, Double>>>();
 		
 		for (String pageID : data.keySet()) {
 			ArrayList<ArrayList<String>> clusters_in_page = data.get(pageID);
 			
 			ArrayList<HashMap<String, Double>> ranked_clusters = new ArrayList<HashMap<String, Double>>();
-			ArrayList<HashMap<String, Double>> ranked_clusters_common_words = new ArrayList<HashMap<String, Double>>();
+			// ArrayList<HashMap<String, Double>> ranked_clusters_common_words = new ArrayList<HashMap<String, Double>>();
 			
 			for (ArrayList<String> cluster : clusters_in_page) {				
 				LinkedHashMap<String, List<String>> entities_in_paragraph = new LinkedHashMap<String, List<String>>();
 				
 				HashMap<String, Double> page_rank_result = new HashMap<String, Double>();
-				HashMap<String, Double> page_rank_from_common_words = new HashMap<String, Double>();
+				// HashMap<String, Double> page_rank_from_common_words = new HashMap<String, Double>();
 				
-				Map<String, String> paragraphs_text = new HashMap<String, String>();
+				// Map<String, String> paragraphs_text = new HashMap<String, String>();
 				
 				for (String paragraphID : cluster) {
 					String query_string = paragraphID;
@@ -149,13 +170,14 @@ public class PageRankClusters {
 					final Document doc = searcher.doc(score.doc);
 	 				final String paragraph_text = doc.getField("text").stringValue();
 	 				
-	 				Entities e = new Entities();
+	 				
+					Entities e = new Entities();
 	 				e.setUp(args[2]);
 	 				
 	 				List<String> e_list = e.retrieveEntities(paragraph_text);
 	 				entities_in_paragraph.put(paragraphID, e_list);
 	 				
-	 				paragraphs_text.put(paragraphID, paragraph_text);
+	 				// paragraphs_text.put(paragraphID, paragraph_text);
 				}
 				
 				// PageRank using entities in paragraphs
@@ -163,16 +185,16 @@ public class PageRankClusters {
 				page_rank_result = pr.getPageRank(entities_in_paragraph);	
 				
 				// PageRank using common words
-				CommonWords cw = new CommonWords();
-				page_rank_from_common_words = cw.getPageRank(paragraphs_text);
+				// CommonWords cw = new CommonWords();
+				// page_rank_from_common_words = cw.getPageRank(paragraphs_text);
 				
 				ranked_clusters.add(page_rank_result);
-				ranked_clusters_common_words.add(page_rank_from_common_words);
+				// ranked_clusters_common_words.add(page_rank_from_common_words);
 			}
 			
 			// Store ranked results per page
 			ranked_data.put(pageID, ranked_clusters);
-			ranked_data_common_words.put(pageID, ranked_clusters_common_words);
+			// ranked_data_common_words.put(pageID, ranked_clusters_common_words);
 			
 			if (count % 25 == 0)
 				System.out.println();
@@ -180,20 +202,47 @@ public class PageRankClusters {
 			count++;
 		}
 		
-		printOutput(ranked_data);
-		printOutput(ranked_data_common_words);
+		// printOutput(ranked_data);
+		// printOutput(ranked_data_common_words);
+
+		FileWriter fw = new FileWriter("paramap-top-kmeans-train-pr.run", true);
+		System.out.println("Writing run file..");
+		count = 0;
+		try {
+			String runFile = args[3];
+			String line = null;
+			FileReader fr = new FileReader(runFile);
+			BufferedReader br = new BufferedReader(fr);
+			while ((line = br.readLine()) != null) {
+				String[] splits = line.split(" ");
+				String pgID = splits[0]; 
+				String paraID = splits[2];
+				String cluster_score = splits[4];
+
+				double c_score = Double.parseDouble(cluster_score);
+				double new_score = getScore(paraID) * c_score;
+
+				String final_string = pgID + " Q0 " + paraID + " 0 " + new_score + " TOP\n";
+				fw.write(final_string);
+				
+				if (count % 50 == 0)
+					System.out.println();
+				System.out.print(".");
+				count++;
+			}
+			
+			br.close();
+			fw.close();
+		}
 		
-		FileOutputStream fileOut = new FileOutputStream("ranked_cluster_1");
-		ObjectOutputStream out = new ObjectOutputStream(fileOut);
-		out.writeObject(ranked_data);
-		out.close();
-		fileOut.close();
+		catch(FileNotFoundException e) {
+			System.out.println("Unable to open file...");
+		}
 		
-		FileOutputStream fileOut2 = new FileOutputStream("ranked_cluster_2");
-		ObjectOutputStream out2 = new ObjectOutputStream(fileOut2);
-		out2.writeObject(ranked_data_common_words);
-		out2.close();
-		fileOut2.close();
+		catch(IOException e) {
+			System.out.println("Error reading file...");
+		}
+		System.out.println("Done..");
 	}
 	
 	/*

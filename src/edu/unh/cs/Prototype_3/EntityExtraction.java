@@ -1,70 +1,66 @@
-package edu.unh.cs.Prototype_2;
+package edu.unh.cs.Prototype_3;
 
 import java.io.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.*;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
-
 /*
  * @author Tarun Prasad
  * 
- * 
  * This class uses DBPedia Spotlight for Entity Retrieval
  */
-public class Entities {
-	
+public class EntityExtraction
+{
 	List<String> entities;
 	String command;
+	String paragraph_text;
 	
-	/*
-	 * Function to set up the command script
-	 */
-	public void setUp(String curl_script) {
-		command = curl_script + "curl_command.sh";
+	public EntityExtraction(String curl_path, String ptext)
+	{
+		command = curl_path + "curl_command.sh";
+		paragraph_text = ptext;
 		entities = new ArrayList<String>();
 	}
 	
-	/*
-	 * Helper function to print out the entities retrieved
-	 */
-	public void printEntities(List<String> entities) {
+	public void printEntities(List<String> entities) 
+	{
 		System.out.println("Entities : ");
-		
-		for (String entity : entities) {
+		for (String entity : entities) 
+		{
 			System.out.print(entity + "\t");
 		}
 	}
 	
-	/*
-	 * Function to retrieve the list of entities
-	 */
-	public List<String> retrieveEntities(String paragraph_text) throws IOException, ParseException{
-		
+	public List<String> retrieveEntities() throws IOException, ParseException
+	{
 		ProcessBuilder pb = new ProcessBuilder(command, paragraph_text);
 		Process proc = pb.start();
 		
 		BufferedReader output = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-		
 		String out = null;
 		out = output.readLine();
 		
 		if (out.equals(null))
+		{
 			System.out.println(out);
+		}
 		
 		JSONParser parser = new JSONParser();
 		JSONObject json = new JSONObject();
 		json = (JSONObject)parser.parse(out);
 		
-		if (json.get("Resources") != null) {
+		if (json.get("Resources") != null) 
+		{
 			JSONArray Resources = (JSONArray)json.get("Resources");
 			Iterator<JSONObject> uris = Resources.iterator();
 			
-			while (uris.hasNext()) {
+			while (uris.hasNext()) 
+			{
 				JSONParser sub_parser = new JSONParser();
 				JSONObject u = (JSONObject)sub_parser.parse(uris.next().toString());
 				String entity_with_path = (String)u.get("@URI");
@@ -73,7 +69,8 @@ public class Entities {
 				
 				String entity = "";
 			
-				for (int i = 0; i < sub.length; i++) {
+				for (int i = 0; i < sub.length; i++) 
+				{
 					entity += sub[i] + " ";
 				}
 				

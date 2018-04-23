@@ -45,9 +45,10 @@ public class EntityExtraction
 		String out = null;
 		out = output.readLine();
 		
-		if (out.equals(null))
+		if (out == null)
 		{
-			System.out.println(out);
+			System.out.println("\nNull returned..");
+			return entities;
 		}
 		
 		JSONParser parser = new JSONParser();

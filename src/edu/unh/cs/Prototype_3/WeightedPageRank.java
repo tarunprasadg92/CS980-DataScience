@@ -10,7 +10,7 @@ import java.util.List;
  * 
  * Class to compute the Weighted Page Rank of paragraphs inside a given cluster
  */
-public class WeightedPageRankEntity
+public class WeightedPageRank
 {
 	public int weight_matrix[][];
 	public double transition_probability_matrix[][];
@@ -24,7 +24,7 @@ public class WeightedPageRankEntity
 	public LinkedHashMap<String, List<String>> input;
 	public HashMap<String, Double> page_ranks;
 	
-	public WeightedPageRankEntity(LinkedHashMap<String, List<String>> in)
+	public WeightedPageRank(LinkedHashMap<String, List<String>> in)
 	{
 		input = new LinkedHashMap<String, List<String>>();
 		input.putAll(in);

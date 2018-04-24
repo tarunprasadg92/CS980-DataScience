@@ -20,6 +20,9 @@ public class EntityExtraction
 	String command;
 	String paragraph_text;
 	
+	/*
+	 * Constructor to initialize the curl script and text to retrieve entities
+	 */
 	public EntityExtraction(String curl_path, String ptext)
 	{
 		command = curl_path + "curl_command.sh";
@@ -27,15 +30,22 @@ public class EntityExtraction
 		entities = new ArrayList<String>();
 	}
 	
+	/*
+	 * Helper function to print out and verify the entities
+	 */
 	public void printEntities(List<String> entities) 
 	{
 		System.out.println("Entities : ");
+		
 		for (String entity : entities) 
 		{
 			System.out.print(entity + "\t");
 		}
 	}
 	
+	/*
+	 * Function to retrieve entities from text by making a CURL request to DBPedia
+	 */
 	public List<String> retrieveEntities() throws IOException, ParseException
 	{
 		ProcessBuilder pb = new ProcessBuilder(command, paragraph_text);

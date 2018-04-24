@@ -1,9 +1,5 @@
 package edu.unh.cs.Prototype_3;
 
-import edu.unh.cs.treccar_v2.Data;
-import edu.unh.cs.treccar_v2.read_data.CborFileTypeException;
-import edu.unh.cs.treccar_v2.read_data.CborRuntimeException;
-import edu.unh.cs.treccar_v2.read_data.DeserializeData;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -15,7 +11,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import java.util.List;
-import java.util.Map;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,10 +24,8 @@ import java.nio.file.Path;
 import java.io.StringReader;
 import org.json.simple.parser.*;
 import java.util.LinkedHashMap;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.ObjectOutputStream;
 
 /*
  * @author Tarun Prasad
@@ -52,7 +45,7 @@ public class ClusterRank
 	String method;
 	
 	/*
-	 * Class to create paragraph ID as query and paragraph text as result
+	 * Sub-class to build query to search index
 	 */
 	static class MyQueryBuilder 
 	{
@@ -65,6 +58,9 @@ public class ClusterRank
 			tokens = new ArrayList<>(128);
 		}
 		
+		/*
+		 * Function to return paragraph text with paragraphID as input
+		 */
 		public BooleanQuery toIDQuery(String queryString) throws IOException 
 		{
 			TokenStream tokenStream = analyzer.tokenStream("paragraphid", new StringReader(queryString));
@@ -81,6 +77,7 @@ public class ClusterRank
 			tokenStream.close();
 			 
 			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+			
 			for (String token:tokens)
 			{
 				booleanQuery.add(new TermQuery(new Term("paragraphid", token)), BooleanClause.Occur.SHOULD);
@@ -90,14 +87,19 @@ public class ClusterRank
 		}
 	}
 	
+	/*
+	 * Function to print and verify the input data read
+	 */
 	public void checkReadData()
 	{
 		for (String page_id : cluster_data.keySet())
 		{
 			ArrayList<ArrayList<String>> clusters_in_page = cluster_data.get(page_id);
+			
 			for (ArrayList<String> cluster : clusters_in_page)
 			{
 				System.out.println("\nNo of paragraphs in cluster : " + cluster.size());
+				
 				for (String paragraph_id : cluster)
 				{
 					System.out.print(paragraph_id + ", ");
@@ -106,6 +108,9 @@ public class ClusterRank
 		}
 	}
 	
+	/*
+	 * Function to rank the paragraphs inside the clusters
+	 */
 	public void rankClusters() throws IOException, ParseException
 	{
 		IndexSearcher searcher = setUpIndexSearcher(index_path, "paragraph.lucene");
@@ -120,6 +125,7 @@ public class ClusterRank
 		if (method.equals("common-words"))
 		{
 			System.out.print("Common-words...");
+			
 			for (String page_id : cluster_data.keySet())
 			{
 				ArrayList<ArrayList<String>> clusters_in_page = cluster_data.get(page_id);
@@ -143,20 +149,26 @@ public class ClusterRank
 						List<String> words_for_paragraph = getParagraphTextAsList(paragraph_text);
 						words_in_paragraph.put(paragraph_id, words_for_paragraph);
 					}
+					
 					WeightedPageRank wpre = new WeightedPageRank(words_in_paragraph);
 					page_rank_result = wpre.getPageRanks();
 					ranked_clusters.add(page_rank_result);
 				}
+				
 				ranked_cluster_data.put(page_id, ranked_clusters);
+				
 				if (count % 25 == 0)
+				{
 					System.out.println();
+				}
+				
 				System.out.print(".");
 				count++;
 			}
 		}
 		
 		else if (method.equals("common-entity"))
-		{
+		{			
 			for (String page_id : cluster_data.keySet())
 			{
 				ArrayList<ArrayList<String>> clusters_in_page = cluster_data.get(page_id);
@@ -181,19 +193,25 @@ public class ClusterRank
 						List<String> entities_for_paragraph = ee.retrieveEntities();
 						entities_in_paragraph.put(paragraph_id, entities_for_paragraph);
 					}
+					
 					WeightedPageRank wpre = new WeightedPageRank(entities_in_paragraph);
 					page_rank_result = wpre.getPageRanks();
 					ranked_clusters.add(page_rank_result);
 				}
+				
 				ranked_cluster_data.put(page_id, ranked_clusters);
 				if (count % 25 == 0)
+				{
 					System.out.println();
+				}
+				
 				System.out.print(".");
 				count++;
 			}
 		}		
 		
 		FileWriter fw;
+		
 		if (method.equals("common-words"))
 		{
 			fw = new FileWriter("WeightedPageRankCommonWords.run", true);
@@ -205,11 +223,13 @@ public class ClusterRank
 		
 		System.out.println("\nWriting run file...");
 		count = 0;
+		
 		try
 		{
 			String line = null;
 			FileReader fr = new FileReader(run_file);
 			BufferedReader br = new BufferedReader(fr);
+			
 			while ((line = br.readLine()) != null)
 			{
 				String[] splits = line.split(" ");
@@ -224,9 +244,15 @@ public class ClusterRank
 				fw.write(final_string);
 				
 				if (count % 25 == 0)
+				{
 					System.out.print(".");
+				}
+				
 				if (count % 1000 == 0)
+				{
 					System.out.println();
+				}
+				
 				count++;
 			}
 			
@@ -236,42 +262,57 @@ public class ClusterRank
 		catch (FileNotFoundException e)
 		{
 			e.printStackTrace();
-		}
-		
+		}		
 		catch(IOException e)
 		{
 			e.printStackTrace();
 		}
 	}
 	
+	/*
+	 * Function to return the contents of the paragraph into list of strings
+	 */
 	public List<String> getParagraphTextAsList(String para_text)
 	{
 		List<String> result = new ArrayList<String>();
 		String[] splits = para_text.split("\\s+");
+		
 		for (int i = 0; i < splits.length; i++)
 		{
 			result.add(splits[i]);
 		}
+		
 		return result;
 	}
 	
+	/*
+	 * Function to return the score obtained for each of the paragraphs after weighted pagerank
+	 */
 	public double getScore(String para_id)
 	{
 		for (String page_id : ranked_cluster_data.keySet())
 		{
 			ArrayList<HashMap<String, Double>> clusters_in_page = ranked_cluster_data.get(page_id);
+			
 			for (HashMap<String, Double> cluster : clusters_in_page)
 			{
+				
 				for (String paragraph_id : cluster.keySet())
 				{
 					if (paragraph_id.equals(para_id))
+					{
 						return cluster.get(paragraph_id);
+					}
 				}
 			}
 		}
+		
 		return 0.0;
 	}
 	
+	/*
+	 * Constructor - handles entire process from reading the clusters to applying weighted pagerank over the paragraphs	
+	 */
 	public ClusterRank(String arg1, String arg2, String arg3, String arg4, String arg5) throws IOException, ParseException
 	{
 		cluster_file = arg1;
@@ -282,6 +323,7 @@ public class ClusterRank
 		
 		// System.out.println("Cluster file : " + cluster_file + " Index Path : " + index_path + " Curl Path : " + curl_path);
 		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(new File(cluster_file)));
+		
 		try
 		{
 			cluster_data = (HashMap<String, ArrayList<ArrayList<String>>>)ois.readObject();
@@ -290,6 +332,7 @@ public class ClusterRank
 		{
 			e.printStackTrace();
 		}
+		
 		ois.close();
 		
 		rankClusters();		
@@ -306,6 +349,9 @@ public class ClusterRank
 		return new IndexSearcher(reader);
 	}
 	
+	/*
+	 * Main function to begin the process
+	 */
 	public static void main(String[] args) throws IOException, ParseException
 	{
 		System.setProperty("file.encoding", "UTF-8");
